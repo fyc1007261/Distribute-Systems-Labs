@@ -37,7 +37,7 @@
 #include "rdt_struct.h"
 #include "rdt_sender.h"
 
-#define WINDOW_SIZE 10
+#define WINDOW_SIZE 5
 #define TIMEOUT 0.3
 #define HEADER_SIZE (LEN_CHECKSUM + LEN_MSGSEQ + LEN_PKTSEQ + LEN_PLDSIZE)
 #define PAYLOAD_SIZE (RDT_PKTSIZE - HEADER_SIZE)
@@ -124,9 +124,9 @@ void Sender_Final()
 
 
     fprintf(stdout, "At %.2fs: sender finalizing ...\n", GetSimulationTime());
-    printf("Total pkts:%d\n", tot_pkt);
-    printf("Total acks:%d\n", nack);
-    printf("Total messages:%d\n", tot_msg);
+    // printf("Total pkts:%d\n", tot_pkt);
+    // printf("Total acks:%d\n", nack);
+    // printf("Total messages:%d\n", tot_msg);
 }
 
 /* event handler, called when a message is passed from the upper layer at the 

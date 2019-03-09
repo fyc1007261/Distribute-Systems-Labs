@@ -83,7 +83,7 @@ void Receiver_Init()
 void Receiver_Final()
 {
     fprintf(stdout, "At %.2fs: receiver finalizing ...\n", GetSimulationTime());
-    fprintf(stdout, "Total received messages:%d\n", tot_message);
+    // fprintf(stdout, "Total received messages:%d\n", tot_message);
     for (std::set<struct packet*>::iterator it = forfree.begin(); it!=forfree.end(); it++){
         free(*it);
     }
@@ -106,15 +106,24 @@ static bool message_to_higher(unsigned int msg_seq){
     if (messages_buffer.find(msg_seq) == messages_buffer.end())
         return false;
     if (messages_buffer[msg_seq].sent) return false;
-    for (unsigned int i=0; i<=tot_message+1; i++){
-        if (i<msg_seq && messages_buffer[i].sent==false){
-            return false;
-        }
-    }
+
+   
+
+    // for (unsigned int i=0; i<msg_seq; i++){
+    //     if (i<msg_seq && messages_buffer[i].sent==false){
+    //         return false;
+    //     }
+    // }
+
+    if (msg_seq != tot_message) return false;
+
+
     std::string mess("");
-    if (messages_buffer[msg_seq].tot_size != messages_buffer[msg_seq].received_size){
+
+     if (messages_buffer[msg_seq].tot_size != messages_buffer[msg_seq].received_size){
         return false;
     }
+    
     for (unsigned int i=0; i<messages_buffer[msg_seq].received_pkts.size(); ++i){
         mess += messages_buffer[msg_seq].received_pkts[i];
     }
@@ -128,6 +137,7 @@ static bool message_to_higher(unsigned int msg_seq){
     // messages_buffer.erase(msg_seq);
     messages_buffer[msg_seq].sent = true;
     tot_message ++;
+    message_to_higher(msg_seq+1);
     return true;
 }
 
@@ -178,10 +188,10 @@ void Receiver_FromLowerLayer(struct packet *pkt)
     }
 
   
-    if (message_to_higher(msg_seq)){
-        for (unsigned int i = msg_seq; i<=tot_message+1; i++){
-            if (!message_to_higher(i));
-        }
-    }
+    message_to_higher(msg_seq);
+    //     for (int i = msg_seq; i<=tot_message+1; i++){
+    //         if (!message_to_higher(i));
+    //     }
+    // }
   
 }
