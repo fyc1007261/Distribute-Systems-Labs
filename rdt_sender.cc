@@ -14,7 +14,7 @@
  */
 /*
  *  new design:
- *  checksum(1 byte) + message_seq#(1 byte) + packet_seq#(4 bytes) + payload_size(1 byte) + contents(121 *  bytes)
+ *  checksum(2 byte) + message_seq#(4 byte) + packet_seq#(4 bytes) + payload_size(1 byte) + contents(117 *  bytes)
  * 
  * 
 */
@@ -37,7 +37,7 @@
 #include "rdt_struct.h"
 #include "rdt_sender.h"
 
-#define WINDOW_SIZE 1
+#define WINDOW_SIZE 10
 #define TIMEOUT 0.3
 #define HEADER_SIZE (LEN_CHECKSUM + LEN_MSGSEQ + LEN_PKTSEQ + LEN_PLDSIZE)
 #define PAYLOAD_SIZE (RDT_PKTSIZE - HEADER_SIZE)
@@ -63,10 +63,10 @@ struct pkt_info
 static bool check_checksum(struct packet *pkt){
     short sum = 0;
     short got;
-    memcpy(&got, (char*)pkt->data, sizeof(short));
+    memcpy(&got, pkt->data, sizeof(short));
     short *temp = (short*)malloc(sizeof(short));
     for (int i=2; i<RDT_PKTSIZE; i+=2){
-        memcpy(temp, (char*)pkt->data + i, sizeof(short));
+        memcpy(temp, pkt->data + i, sizeof(short));
         sum += *temp;
     }
     free(temp);
@@ -78,7 +78,7 @@ static void checksum(struct packet *pkt)
     short *temp = (short *)malloc(sizeof(short));
     for (int i = 2; i < RDT_PKTSIZE; i += 2)
     {
-        memcpy(temp, (char *)pkt->data + i, sizeof(short));
+        memcpy(temp, pkt->data + i, sizeof(short));
         sum += *temp;
     }
     memcpy(pkt->data, &sum, LEN_CHECKSUM);
@@ -87,15 +87,17 @@ static void checksum(struct packet *pkt)
 
 static int waiting;
 void flush_outof_queue(){
-    if (waiting!=0 || send_buffer_map.size()<WINDOW_SIZE) return;
+    if (waiting!=0 || send_buffer_map.size()==0) return;
     int i = 0;
-    waiting = WINDOW_SIZE;
-
-    for (auto it = send_buffer_map.begin(); i<WINDOW_SIZE; i++, it++){
+    waiting = 0;
+    // printf("begin loop, size=%d\n", send_buffer_map.size());
+    for (auto it = send_buffer_map.begin(); it!=send_buffer_map.end() && i<WINDOW_SIZE; i++, it++){
         // printf("size=%d\n", send_buffer_map.size());
         tot_pkt++;
+        waiting++;
         Sender_ToLowerLayer(it->second.pkt);
     }
+    // printf("end loop\n");
     Sender_StartTimer(TIMEOUT);
 }
 
@@ -109,15 +111,22 @@ void Sender_Init()
 
 void Sender_Final()
 {
-    fprintf(stdout, "At %.2fs: sender finalizing ...\n", GetSimulationTime());
-    printf("Total pkts:%d\n", tot_pkt);
-    printf("Total acks:%d\n", nack);
-    printf("Total messages:%d\n", tot_msg);
+    for (int i=0; i<WINDOW_SIZE; i++){
+        waiting = 0;
+        // printf("remaining:%d\n", send_buffer_map.size());
+        flush_outof_queue();
+    }
 
     for (std::map<long, struct pkt_info>::iterator it = send_buffer_map.begin(); it != send_buffer_map.end(); it++)
     {
         free(it->second.pkt);
     }
+
+
+    fprintf(stdout, "At %.2fs: sender finalizing ...\n", GetSimulationTime());
+    printf("Total pkts:%d\n", tot_pkt);
+    printf("Total acks:%d\n", nack);
+    printf("Total messages:%d\n", tot_msg);
 }
 
 /* event handler, called when a message is passed from the upper layer at the 
@@ -134,6 +143,7 @@ void Sender_FromUpperLayer(struct message *msg)
     int cursor = 0;
 
     // printf("message:%s\n", msg->data);
+    fflush(stdout);
 
     for (int i = 0; i < pkt_needed; ++i)
     {
@@ -162,7 +172,6 @@ void Sender_FromUpperLayer(struct message *msg)
         }
         else
         {
-            // char pkt_size = MIN(rest_size + HEADER_SIZE, RDT_PKTSIZE);
             unsigned char pldsize = MIN(PAYLOAD_SIZE, rest_size);
             memcpy(pkt->data + LEN_CHECKSUM, &msg_seq, LEN_MSGSEQ);
             memcpy(pkt->data + LEN_CHECKSUM + LEN_MSGSEQ, &pkt_seq, LEN_PKTSEQ);
@@ -216,6 +225,7 @@ void Sender_FromLowerLayer(struct packet *pkt)
 /* event handler, called when the timer expires */
 void Sender_Timeout()
 {
+    // printf("time out!\n");
     waiting = 0;
     flush_outof_queue();
 }

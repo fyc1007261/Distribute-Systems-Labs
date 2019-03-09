@@ -46,7 +46,6 @@ struct message_info_buffer {
 };
 
 static std::map<unsigned int, struct message_info_buffer> messages_buffer;
-static std::map<unsigned int, int> rotations;
 static std::set<struct packet*> forfree;
 
 static int tot_message = 0;
@@ -79,10 +78,6 @@ void Receiver_Init()
 {
     fprintf(stdout, "At %.2fs: receiver initializing ...\n", GetSimulationTime());
     messages_buffer.clear();
-    for (unsigned int i=0; i<=255; i++){
-        rotations[i] = 0;
-    }
-    
 }
 
 void Receiver_Final()
@@ -111,8 +106,8 @@ static bool message_to_higher(unsigned int msg_seq){
     if (messages_buffer.find(msg_seq) == messages_buffer.end())
         return false;
     if (messages_buffer[msg_seq].sent) return false;
-    for (unsigned int i=0; i<=255; i++){
-        if (i<msg_seq && rotations[i] <= rotations[msg_seq] ){
+    for (unsigned int i=0; i<=tot_message+1; i++){
+        if (i<msg_seq && messages_buffer[i].sent==false){
             return false;
         }
     }
@@ -129,9 +124,9 @@ static bool message_to_higher(unsigned int msg_seq){
     strncpy(msg->data, mess.c_str(),mess.size());
     Receiver_ToUpperLayer(msg);
     // printf("received:%s\n", msg->data);
+    fflush(stdout);
     // messages_buffer.erase(msg_seq);
     messages_buffer[msg_seq].sent = true;
-    rotations[msg_seq] += 1;
     tot_message ++;
     return true;
 }
@@ -184,8 +179,8 @@ void Receiver_FromLowerLayer(struct packet *pkt)
 
   
     if (message_to_higher(msg_seq)){
-        for (unsigned int i = 0; i<=255; i++){
-            if (!message_to_higher(i)) ;
+        for (unsigned int i = msg_seq; i<=tot_message+1; i++){
+            if (!message_to_higher(i));
         }
     }
   
