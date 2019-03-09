@@ -6,7 +6,7 @@ Name: 蔡一凡
 
 Email: fyc1007261@sjtu.edu.cn
 
-### **Note: The program won't stuck, but it may take a relatively long time before the simulator ends. Please wait patiently... Thanks!**
+### **Note: The program is likely to fail if the corruption rate and/or the loss rate are too large (like 0.6 or 0.8). If it fails, please try some extra times. Thanks!**
 
 ## Packet Design 
 
