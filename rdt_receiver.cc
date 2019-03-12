@@ -39,14 +39,14 @@ struct message_info_buffer {
     int tot_size;
     int received_size;
     std::map<int, std::string> received_pkts;
-    bool sent;
-    message_info_buffer(): tot_size(-1), received_size(0), sent(false){
+    message_info_buffer(): tot_size(-1), received_size(0){
         received_pkts.clear();
     }
 };
 
 static std::map<unsigned int, struct message_info_buffer> messages_buffer;
 static std::set<struct packet*> forfree;
+static std::set<unsigned int> finished;
 
 static int tot_message = 0;
 
@@ -105,18 +105,10 @@ static bool message_to_higher(unsigned int msg_seq){
     // finished, then to the next one;
     if (messages_buffer.find(msg_seq) == messages_buffer.end())
         return false;
-    if (messages_buffer[msg_seq].sent) return false;
-
-   
-
-    // for (unsigned int i=0; i<msg_seq; i++){
-    //     if (i<msg_seq && messages_buffer[i].sent==false){
-    //         return false;
-    //     }
-    // }
+    if (finished.find(msg_seq) != finished.end()) 
+        return false;
 
     if (msg_seq != tot_message) return false;
-
 
     std::string mess("");
 
@@ -134,8 +126,8 @@ static bool message_to_higher(unsigned int msg_seq){
     Receiver_ToUpperLayer(msg);
     // printf("received:%s\n", msg->data);
     fflush(stdout);
-    // messages_buffer.erase(msg_seq);
-    messages_buffer[msg_seq].sent = true;
+    messages_buffer.erase(msg_seq);
+    finished.insert(msg_seq);
     tot_message ++;
     message_to_higher(msg_seq+1);
     return true;
@@ -189,6 +181,7 @@ void Receiver_FromLowerLayer(struct packet *pkt)
 
   
     message_to_higher(msg_seq);
+    // free(pkt);
     //     for (int i = msg_seq; i<=tot_message+1; i++){
     //         if (!message_to_higher(i));
     //     }

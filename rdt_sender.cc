@@ -46,7 +46,7 @@
 #define MIN(a, b) (a < b ? a : b)
 
 static std::map<long, struct pkt_info> send_buffer_map;
-static int tot_msg = 0;
+static long tot_msg = 0;
 static int tot_pkt = 0;
 
 
@@ -214,6 +214,7 @@ void Sender_FromLowerLayer(struct packet *pkt)
     memcpy(&pkt_seq, pkt->data+LEN_CHECKSUM+LEN_MSGSEQ, LEN_PKTSEQ);
     long index = (msg_seq << 16) + pkt_seq;
     // send_buffer_map[index].acked = true;
+    free(send_buffer_map[index].pkt);
     send_buffer_map.erase(index);
     waiting--;
     if (waiting==0) {
