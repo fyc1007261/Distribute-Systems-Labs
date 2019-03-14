@@ -39,6 +39,7 @@
 
 #define WINDOW_SIZE 5
 #define TIMEOUT 0.3
+#define LEFTSHIFT 16
 #define HEADER_SIZE (LEN_CHECKSUM + LEN_MSGSEQ + LEN_PKTSEQ + LEN_PLDSIZE)
 #define PAYLOAD_SIZE (RDT_PKTSIZE - HEADER_SIZE)
 
@@ -165,7 +166,7 @@ void Sender_FromUpperLayer(struct message *msg)
             rest_size -= pldsize;
             cursor += pldsize;
 
-            long index = (msg_seq << 16) + pkt_seq;
+            long index = (msg_seq << LEFTSHIFT) + pkt_seq;
             struct pkt_info info = pkt_info();
             info.pkt = pkt;
             send_buffer_map[index] = info;
@@ -183,7 +184,7 @@ void Sender_FromUpperLayer(struct message *msg)
             rest_size -= pldsize;
             cursor += pldsize;
 
-            long index = (msg_seq << 16) + pkt_seq;
+            long index = (msg_seq << LEFTSHIFT) + pkt_seq;
             struct pkt_info info = pkt_info();
             info.pkt = pkt;
             send_buffer_map[index] = info;
@@ -212,7 +213,7 @@ void Sender_FromLowerLayer(struct packet *pkt)
     int pkt_seq;
     memcpy(&msg_seq, pkt->data+LEN_CHECKSUM, LEN_MSGSEQ);
     memcpy(&pkt_seq, pkt->data+LEN_CHECKSUM+LEN_MSGSEQ, LEN_PKTSEQ);
-    long index = (msg_seq << 16) + pkt_seq;
+    long index = (msg_seq << LEFTSHIFT) + pkt_seq;
     // send_buffer_map[index].acked = true;
     free(send_buffer_map[index].pkt);
     send_buffer_map.erase(index);

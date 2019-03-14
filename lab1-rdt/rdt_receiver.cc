@@ -181,10 +181,5 @@ void Receiver_FromLowerLayer(struct packet *pkt)
 
   
     message_to_higher(msg_seq);
-    // free(pkt);
-    //     for (int i = msg_seq; i<=tot_message+1; i++){
-    //         if (!message_to_higher(i));
-    //     }
-    // }
   
 }
