@@ -76,7 +76,7 @@ $ sudo ./build/udp		# use sudo to avoid "no free hugepages" error.
 
 - Checksums of UDP and IP are correct.
 
-  ![Checksum](/home/jos/Distributed_Systems/labs/lab2/screenshots/2.png)
+  ![Checksum](screenshots/2.png)
 
-  ![Checksum](/home/jos/Distributed_Systems/labs/lab2/screenshots/3.png)
+  ![Checksum](screenshots/3.png)
 
