@@ -68,21 +68,14 @@ public class Mapper {
     public static void doMap(String jobName, int mapTask, String inFile,
                              int nReduce, MapFunc mapFunc) {
 
-        System.out.println("Enter doMap");
-        System.out.println("File name =" + inFile);
+//        System.out.println("Enter doMap");
+//        System.out.println("File name =" + inFile);
 
 
         // read the file and store the contents
-        StringBuilder contents = new StringBuilder();
-        File file = new File(inFile);
-        InputStream inputStream;
+        String contents = "";
         try{
-            inputStream = new FileInputStream(file);
-            int content;
-            while ((content = inputStream.read()) != -1){
-                contents.append((char)content);
-            }
-            inputStream.close();
+            contents = new String(Files.readAllBytes(new File(inFile).toPath()));
         }
         catch (IOException e){
             e.printStackTrace();
@@ -112,11 +105,10 @@ public class Mapper {
             catch (IOException e){
                 e.printStackTrace();
             }
-
         }
 
 
-        System.out.println("Exit doMap");
+//        System.out.println("Exit doMap");
     }
 
     /**
