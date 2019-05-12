@@ -1,10 +1,24 @@
 # Lab 2 - Send and Receive Packets with DPDK
 
-516030910375 蔡一凡
+Student ID: 516030910375 
+
+Name: 蔡一凡
+
+## Build Instructions
+
+```shell
+$ cd lab2		
+$ make
+$ sudo ./build/udp		# use sudo to avoid "no free hugepages" error.
+```
+
+
 
 ## Part 1.
 ### Q1. What is the purpose of using huge page?
 - Network I/O involves a large amount of data. Huge pages are used to avoid TLB miss and improve the performance.
+
+  
 
 ### Q2. Take examples/helloworld as an example, describe the execution flow of DPDK programs.
 
@@ -18,7 +32,10 @@
     ```
 
 - The master core also calls the function to print the message using the `lcore_hello` function.
+
 - The master core waits for all cores to finish their tasks and then exits.
+
+  
 
 ### Q3.  Read the codes of examples/skeleton, describe DPDK APIs related to sending and receiving packets.
 
@@ -36,3 +53,30 @@
   - Headroom: the headroom contains some metadata of the "rte_mbuf", whose length can be customized.
   - Data: The data in the packet.
   - Tailroom: The rest of the "rte_mbuf".
+
+
+
+## Part 2: Send packets with DPDK
+
+### Program Description
+
+- Similar to `examples/skeleton`, the port(s) is(are) initialed first, and a buffer pool is created.
+- In the master core, use a message "helloworld\0" as the data to be sent.
+- Following the instructions on "http://doc.dpdk.org/api", build the header for UDP, IP and Ethernet.
+
+### Verifications
+
+### ![screenshots](screenshots/1.png) 
+
+- Wireshark is able to identify the packet's Ethernet, IP and UDP format. (Protocol UDP recognized by Wireshark)
+
+- The MAC address (The real MAC address of the port), IP address (127.0.0.1) and ports (from 1000 to 1001) are correctly recognized.
+
+- The data "helloworld\0" is correctly recognized.
+
+- Checksums of UDP and IP are correct.
+
+  ![Checksum](screenshots/2.png)
+
+  ![Checksum](screenshots/3.png)
+
