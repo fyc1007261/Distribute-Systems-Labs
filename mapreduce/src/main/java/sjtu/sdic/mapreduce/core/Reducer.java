@@ -95,6 +95,10 @@ public class Reducer {
                 }
                 temp.add(keyValueList.get(i).value);
             }
+            else {
+                // existing key
+                temp.add(keyValueList.get(i).value);
+            }
         }
         String last = reduceFunc.reduce(keyValueList.get(keyValueList.size()-1).key,
                 temp.toArray(new String[temp.size()]));
