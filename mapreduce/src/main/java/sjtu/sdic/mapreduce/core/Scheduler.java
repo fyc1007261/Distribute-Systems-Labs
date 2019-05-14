@@ -52,8 +52,56 @@ public class Scheduler {
         // have completed successfully, schedule() should return.
         // Your code here (Part III, Part IV).
 
-        
+        CountDownLatch countDownLatch = new CountDownLatch(nTasks);
+        int task = 0;
+        try {
+            while (task < nTasks){
+                String workerName = registerChan.read();
+                DoTaskArgs doTaskArgs =
+                        new DoTaskArgs(jobName, mapFiles[task], phase, task, nOther);
+                WorkerThread workerThread = new WorkerThread(workerName, doTaskArgs,
+                        countDownLatch, registerChan);
+                workerThread.start();
+                task ++;
+            }
+            countDownLatch.await();
+        }
+        catch (InterruptedException e){
+            e.printStackTrace();
+        }
+
+
 
         System.out.println(String.format("Schedule: %s done", phase));
     }
+
+
+    private static class WorkerThread extends Thread{
+
+        private DoTaskArgs doTaskArgs;
+        private String workerName;
+        private CountDownLatch countDownLatch;
+        private Channel<String> registerChan;
+
+        WorkerThread(String workerName, DoTaskArgs doTaskArgs,
+                     CountDownLatch countDownLatch, Channel<String> registerChan){
+            this.doTaskArgs = doTaskArgs;
+            this.workerName = workerName;
+            this.countDownLatch = countDownLatch;
+            this.registerChan = registerChan;
+        }
+
+        @Override
+        public void run() {
+            Call.getWorkerRpcService(this.workerName).doTask(this.doTaskArgs);
+            countDownLatch.countDown();
+            try {
+                registerChan.write(this.workerName);
+            }
+            catch (InterruptedException e){
+                e.printStackTrace();
+            }
+        }
+    }
+
 }
