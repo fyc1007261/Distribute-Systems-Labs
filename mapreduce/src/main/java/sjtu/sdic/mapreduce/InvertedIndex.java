@@ -10,17 +10,36 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.util.TreeSet;
+
 /**
  * Created by Cachhe on 2019/4/24.
  */
 public class InvertedIndex {
 
     public static List<KeyValue> mapFunc(String file, String value) {
-        return null;
+        Pattern pattern = Pattern.compile("[a-zA-Z0-9]+");
+        Matcher matcher = pattern.matcher(value);
+        List<KeyValue> keyValueList = new ArrayList<>();
+        while (matcher.find()){
+            String word = matcher.group();
+            keyValueList.add(new KeyValue(word, file));
+        }
+        return keyValueList;
     }
 
     public static String reduceFunc(String key, String[] values) {
-        return null;
+        TreeSet<String> treeSet = new TreeSet<>(new ArrayList<String>(Arrays.asList(values)));
+        StringBuilder ret = new StringBuilder();
+        ret.append(treeSet.size());
+        ret.append(" ");
+        for (String value:treeSet){
+            ret.append(value);
+            ret.append(',');
+        }
+        ret.deleteCharAt(ret.lastIndexOf(","));
+        return ret.toString();
+
     }
 
     public static void main(String[] args) {
