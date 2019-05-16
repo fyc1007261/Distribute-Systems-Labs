@@ -10,6 +10,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Cachhe on 2019/4/22.
@@ -31,6 +36,8 @@ public class Scheduler {
      * @param phase MAP or REDUCE
      * @param registerChan register info channel
      */
+    private static ConcurrentHashMap<Integer, Boolean> tasksFinished;
+
     public static void schedule(String jobName, String[] mapFiles, int nReduce, JobPhase phase, Channel<String> registerChan) {
         int nTasks = -1; // number of map or reduce tasks
         int nOther = -1; // number of inputs (for reduce) or outputs (for map)
@@ -53,18 +60,28 @@ public class Scheduler {
         // Your code here (Part III, Part IV).
 
         CountDownLatch countDownLatch = new CountDownLatch(nTasks);
-        int task = 0;
+        tasksFinished = new ConcurrentHashMap<>();
+        for (int i = 0; i < nTasks; i++){
+            tasksFinished.put(i, false);
+        }
         try {
-            while (task < nTasks){
-                String workerName = registerChan.read();
-                DoTaskArgs doTaskArgs =
-                        new DoTaskArgs(jobName, mapFiles[task], phase, task, nOther);
-                WorkerThread workerThread = new WorkerThread(workerName, doTaskArgs,
-                        countDownLatch, registerChan);
-                workerThread.start();
-                task ++;
+            boolean allFinished = false;
+            String workerName;
+            while (!allFinished) {
+                allFinished = true;
+                for (int task = 0; task < nTasks; task++) {
+                    if (tasksFinished.get(task))
+                        continue;
+                    allFinished = false;
+                    workerName = registerChan.read();
+                    DoTaskArgs doTaskArgs =
+                            new DoTaskArgs(jobName, mapFiles[task], phase, task, nOther);
+                    WorkerThread workerThread = new WorkerThread(workerName, doTaskArgs,
+                            countDownLatch, registerChan);
+                    workerThread.start();
+                }
+                countDownLatch.await(10, TimeUnit.SECONDS);
             }
-            countDownLatch.await();
         }
         catch (InterruptedException e){
             e.printStackTrace();
@@ -82,6 +99,7 @@ public class Scheduler {
         private String workerName;
         private CountDownLatch countDownLatch;
         private Channel<String> registerChan;
+        private Lock lock;
 
         WorkerThread(String workerName, DoTaskArgs doTaskArgs,
                      CountDownLatch countDownLatch, Channel<String> registerChan){
@@ -94,6 +112,7 @@ public class Scheduler {
         @Override
         public void run() {
             Call.getWorkerRpcService(this.workerName).doTask(this.doTaskArgs);
+            tasksFinished.replace(this.doTaskArgs.taskNum, true);
             countDownLatch.countDown();
             try {
                 registerChan.write(this.workerName);
